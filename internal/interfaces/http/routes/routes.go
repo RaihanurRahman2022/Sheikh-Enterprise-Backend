@@ -42,6 +42,18 @@ func SetupRoutes(router *gin.Engine,
 	setupAnalyticsRoutes(api, analyticsHandler)
 }
 
+// setupCompanyRoutes configures company-related routes
+func setupCompanyRoutes(api *gin.RouterGroup, handler *handlers.CompanyHandler) {
+	companies := api.Group("/companies")
+	{
+		companies.GET("", handler.GetCompanies)
+		companies.GET("/:id", handler.GetCompany)
+		companies.POST("", middleware.RoleMiddleware(entities.RoleAdmin), handler.CreateCompany)
+		companies.PUT("/:id", middleware.RoleMiddleware(entities.RoleAdmin), handler.UpdateCompany)
+		companies.DELETE("/:id", middleware.RoleMiddleware(entities.RoleAdmin), handler.DeleteCompany)
+	}
+}
+
 // setupSupplierRoutes configures supplier-related routes
 func setupSupplierRoutes(api *gin.RouterGroup, supplierHandler *handlers.SupplierHandler) {
 	suppliers := api.Group("/suppliers")
