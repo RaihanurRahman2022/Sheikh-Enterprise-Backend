@@ -11,7 +11,9 @@ func SetupRoutes(router *gin.Engine,
 	authHandler *handlers.AuthHandler,
 	userHandler *handlers.UserHandler,
 	productHandler *handlers.ProductHandler,
-	salesHandler *handlers.SalesHandler) {
+	salesHandler *handlers.SalesHandler,
+	supplierHandler *handlers.SupplierHandler,
+	purchaseHandler *handlers.PurchaseHandler) {
 
 	// Public routes
 	setupPublicRoutes(router, authHandler)
@@ -28,6 +30,30 @@ func SetupRoutes(router *gin.Engine,
 
 	// Sales routes
 	setupSalesRoutes(api, salesHandler)
+	setupSupplierRoutes(api, supplierHandler)
+	setupPurchaseRoutes(api, purchaseHandler)
+}
+
+// setupSupplierRoutes configures supplier-related routes
+func setupSupplierRoutes(api *gin.RouterGroup, supplierHandler *handlers.SupplierHandler) {
+	suppliers := api.Group("/suppliers")
+	{
+		suppliers.GET("", supplierHandler.GetSuppliers)
+		suppliers.GET("/:id", supplierHandler.GetSupplier)
+		suppliers.POST("", supplierHandler.CreateSupplier)
+		suppliers.DELETE("/:id", supplierHandler.DeleteSupplier)
+	}
+}
+
+// setupPurchaseRoutes configures purchase-related routes
+func setupPurchaseRoutes(api *gin.RouterGroup, purchaseHandler *handlers.PurchaseHandler) {
+	purchases := api.Group("/purchases")
+	{
+		purchases.GET("", purchaseHandler.GetPurchases)
+		purchases.GET("/:id", purchaseHandler.GetPurchase)
+		purchases.POST("", purchaseHandler.CreatePurchase)
+		purchases.DELETE("/:id", purchaseHandler.DeletePurchase)
+	}
 }
 
 // setupPublicRoutes configures public routes that don't require authentication
