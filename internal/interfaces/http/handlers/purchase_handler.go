@@ -1,9 +1,9 @@
-
 package handlers
 
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"Sheikh-Enterprise-Backend/internal/domain/entities"
 	validator "Sheikh-Enterprise-Backend/internal/infrastructure/validation"
@@ -88,6 +88,17 @@ func (h *PurchaseHandler) CreatePurchase(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Set entry timestamp
+	purchase.PurchaseDateTime = time.Now()
+
+	// Get user from context for entry_by
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found in context"})
+		return
+	}
+	purchase.EntryByID = user.(entities.User).ID
 
 	if err := h.purchaseService.CreatePurchase(&purchase); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create purchase"})

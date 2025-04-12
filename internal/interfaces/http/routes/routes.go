@@ -25,13 +25,21 @@ func SetupRoutes(router *gin.Engine,
 	// User routes
 	setupUserRoutes(api, userHandler)
 
-	// Product routes
+	// Master Data routes
 	setupProductRoutes(api, productHandler)
-
-	// Sales routes
-	setupSalesRoutes(api, salesHandler)
+	setupCompanyRoutes(api, companyHandler)
+	setupShopRoutes(api, shopHandler)
+	setupCustomerRoutes(api, customerHandler)
 	setupSupplierRoutes(api, supplierHandler)
+
+	// Transaction routes
+	setupSalesRoutes(api, salesHandler)
 	setupPurchaseRoutes(api, purchaseHandler)
+	setupStockTransferRoutes(api, stockTransferHandler)
+	setupPaymentRoutes(api, paymentHandler)
+
+	// Analytics routes
+	setupAnalyticsRoutes(api, analyticsHandler)
 }
 
 // setupSupplierRoutes configures supplier-related routes

@@ -86,6 +86,19 @@ func (h *SupplierHandler) CreateSupplier(c *gin.Context) {
 		return
 	}
 
+	// Additional validation
+	if supplier.Phone != "" && !strings.HasPrefix(supplier.Phone, "+") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "phone number must start with country code"})
+		return
+	}
+
+	if supplier.Email != "" {
+		if err := validator.ValidateEmail(supplier.Email); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid email format"})
+			return
+		}
+	}
+
 	if err := h.supplierService.CreateSupplier(&supplier); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create supplier"})
 		return
