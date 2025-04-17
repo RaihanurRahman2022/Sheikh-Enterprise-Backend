@@ -13,45 +13,53 @@ import (
 var (
 	ErrInvalidCredentials = errors.New("invalid username or password")
 	ErrUserInactive       = errors.New("user is inactive")
+	ErrInvalidToken       = errors.New("invalid token")
 )
 
 type AuthService interface {
-	Login(username, password string) (string, error)
+	Login(username, password string) (string, string, error)
 	ChangePassword(userID string, oldPassword, newPassword string) error
 	Register(req *entities.RegisterRequest) error
+	RefreshToken(refreshToken string) (string, string, error)
 }
 
 type authService struct {
-	userRepo repository.UserRepository
+	authRepo repository.AuthRepository
 }
 
-func NewAuthService(userRepo repository.UserRepository) AuthService {
+func NewAuthService(authRepo repository.AuthRepository) AuthService {
 	return &authService{
-		userRepo: userRepo,
+		authRepo: authRepo,
 	}
 }
 
-func (s *authService) Login(username, password string) (string, error) {
-	user, err := s.userRepo.GetByUsername(username)
+func (s *authService) Login(username, password string) (string, string, error) {
+	user, err := s.authRepo.GetUserByUsername(username)
 	if err != nil {
-		return "", ErrInvalidCredentials
+		return "", "", ErrInvalidCredentials
 	}
 
 	if !user.Active {
-		return "", ErrUserInactive
+		return "", "", ErrUserInactive
 	}
 
 	if !utils.CheckPassword(password, user.Password) {
-		return "", ErrInvalidCredentials
+		return "", "", ErrInvalidCredentials
 	}
 
-	// Generate JWT token
-	token, err := utils.GenerateJWT(user.ID, user.Username, string(user.Role), user.ShopID)
+	// Generate access token (24 hours)
+	accessToken, err := utils.GenerateJWT(user.ID, user.Username, string(user.Role), user.ShopID)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return token, nil
+	// Generate refresh token (7 days)
+	refreshToken, err := utils.GenerateRefreshToken(user.ID)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, nil
 }
 
 func (s *authService) ChangePassword(userID string, oldPassword, newPassword string) error {
@@ -59,7 +67,8 @@ func (s *authService) ChangePassword(userID string, oldPassword, newPassword str
 	if err != nil {
 		return err
 	}
-	user, err := s.userRepo.GetByID(uid)
+
+	user, err := s.authRepo.GetUserByID(uid)
 	if err != nil {
 		return err
 	}
@@ -73,7 +82,7 @@ func (s *authService) ChangePassword(userID string, oldPassword, newPassword str
 		return err
 	}
 
-	return s.userRepo.UpdatePassword(user.ID, hashedPassword)
+	return s.authRepo.UpdatePassword(uid, hashedPassword)
 }
 
 func (s *authService) Register(req *entities.RegisterRequest) error {
@@ -101,5 +110,35 @@ func (s *authService) Register(req *entities.RegisterRequest) error {
 		user.ShopID = &shopID
 	}
 
-	return s.userRepo.Create(user)
+	return s.authRepo.Create(user)
+}
+
+func (s *authService) RefreshToken(refreshToken string) (string, string, error) {
+	claims, err := utils.ValidateRefreshToken(refreshToken)
+	if err != nil {
+		return "", "", ErrInvalidToken
+	}
+
+	user, err := s.authRepo.GetUserByID(claims.UserID)
+	if err != nil {
+		return "", "", ErrInvalidToken
+	}
+
+	if !user.Active {
+		return "", "", ErrUserInactive
+	}
+
+	// Generate new access token (24 hours)
+	accessToken, err := utils.GenerateJWT(user.ID, user.Username, string(user.Role), user.ShopID)
+	if err != nil {
+		return "", "", err
+	}
+
+	// Generate new refresh token (7 days)
+	newRefreshToken, err := utils.GenerateRefreshToken(user.ID)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessToken, newRefreshToken, nil
 }

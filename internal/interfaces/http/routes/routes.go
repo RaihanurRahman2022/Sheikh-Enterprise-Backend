@@ -3,76 +3,33 @@ package routes
 import (
 	"Sheikh-Enterprise-Backend/internal/interfaces/http/handlers"
 	"Sheikh-Enterprise-Backend/internal/interfaces/http/middleware"
+
 	"github.com/gin-gonic/gin"
 )
 
-// SetupRoutes configures all the routes for the application
-func SetupRoutes(router *gin.Engine,
-	authHandler *handlers.AuthHandler,
-	userHandler *handlers.UserHandler,
-	productHandler *handlers.ProductHandler,
-	salesHandler *handlers.SalesHandler,
-	supplierHandler *handlers.SupplierHandler,
-	purchaseHandler *handlers.PurchaseHandler) {
+// SetupRoutes configures all routes for the application
+func SetupRoutes(router *gin.Engine, handlers *handlers.Handlers) {
+	// Health check route
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status": "ok",
+		})
+	})
 
-	// Public routes
-	setupPublicRoutes(router, authHandler)
+	// Public routes (no auth required)
+	setupPublicRoutes(router, handlers.Auth)
 
-	// Protected routes
+	// API routes (auth required)
 	api := router.Group("/api")
 	api.Use(middleware.AuthMiddleware())
-
-	// User routes
-	setupUserRoutes(api, userHandler)
-
-	// Master Data routes
-	setupProductRoutes(api, productHandler)
-	setupCompanyRoutes(api, companyHandler)
-	setupShopRoutes(api, shopHandler)
-	setupCustomerRoutes(api, customerHandler)
-	setupSupplierRoutes(api, supplierHandler)
-
-	// Transaction routes
-	setupSalesRoutes(api, salesHandler)
-	setupPurchaseRoutes(api, purchaseHandler)
-	setupStockTransferRoutes(api, stockTransferHandler)
-	setupPaymentRoutes(api, paymentHandler)
-
-	// Analytics routes
-	setupAnalyticsRoutes(api, analyticsHandler)
-}
-
-// setupCompanyRoutes configures company-related routes
-func setupCompanyRoutes(api *gin.RouterGroup, handler *handlers.CompanyHandler) {
-	companies := api.Group("/companies")
 	{
-		companies.GET("", handler.GetCompanies)
-		companies.GET("/:id", handler.GetCompany)
-		companies.POST("", middleware.RoleMiddleware(entities.RoleAdmin), handler.CreateCompany)
-		companies.PUT("/:id", middleware.RoleMiddleware(entities.RoleAdmin), handler.UpdateCompany)
-		companies.DELETE("/:id", middleware.RoleMiddleware(entities.RoleAdmin), handler.DeleteCompany)
-	}
-}
-
-// setupSupplierRoutes configures supplier-related routes
-func setupSupplierRoutes(api *gin.RouterGroup, supplierHandler *handlers.SupplierHandler) {
-	suppliers := api.Group("/suppliers")
-	{
-		suppliers.GET("", supplierHandler.GetSuppliers)
-		suppliers.GET("/:id", supplierHandler.GetSupplier)
-		suppliers.POST("", supplierHandler.CreateSupplier)
-		suppliers.DELETE("/:id", supplierHandler.DeleteSupplier)
-	}
-}
-
-// setupPurchaseRoutes configures purchase-related routes
-func setupPurchaseRoutes(api *gin.RouterGroup, purchaseHandler *handlers.PurchaseHandler) {
-	purchases := api.Group("/purchases")
-	{
-		purchases.GET("", purchaseHandler.GetPurchases)
-		purchases.GET("/:id", purchaseHandler.GetPurchase)
-		purchases.POST("", purchaseHandler.CreatePurchase)
-		purchases.DELETE("/:id", purchaseHandler.DeletePurchase)
+		setupUserRoutes(api, handlers.User)
+		setupProductRoutes(api, handlers.Product)
+		setupSalesRoutes(api, handlers.Sales)
+		setupPurchaseRoutes(api, handlers.Purchase)
+		setupSupplierRoutes(api, handlers.Supplier)
+		setupCompanyRoutes(api, handlers.Company)
+		setupShopRoutes(api, handlers.Shop)
 	}
 }
 
@@ -82,6 +39,8 @@ func setupPublicRoutes(router *gin.Engine, authHandler *handlers.AuthHandler) {
 	{
 		auth.POST("/login", authHandler.Login)
 		auth.POST("/register", authHandler.Register)
+		auth.POST("/change-password", authHandler.ChangePassword)
+		auth.POST("/refresh", authHandler.RefreshToken)
 	}
 }
 
@@ -91,7 +50,6 @@ func setupUserRoutes(api *gin.RouterGroup, userHandler *handlers.UserHandler) {
 	{
 		users.GET("/me", userHandler.GetUserDetails)
 		users.PUT("/me", userHandler.UpdateUserDetails)
-		users.PUT("/change-password", userHandler.UpdatePassword)
 	}
 }
 
@@ -124,4 +82,54 @@ func setupSalesRoutes(api *gin.RouterGroup, salesHandler *handlers.SalesHandler)
 			analytics.GET("/last-7-days", salesHandler.GetLast7DaysSales)
 		}
 	}
+}
+
+// setupPurchaseRoutes configures purchase-related routes
+func setupPurchaseRoutes(api *gin.RouterGroup, purchaseHandler *handlers.PurchaseHandler) {
+	purchases := api.Group("/purchases")
+	{
+		purchases.GET("", purchaseHandler.GetPurchases)
+		purchases.GET("/:id", purchaseHandler.GetPurchase)
+		purchases.POST("", purchaseHandler.CreatePurchase)
+		purchases.DELETE("/:id", purchaseHandler.DeletePurchase)
+	}
+}
+
+// setupSupplierRoutes configures supplier-related routes
+func setupSupplierRoutes(api *gin.RouterGroup, supplierHandler *handlers.SupplierHandler) {
+	suppliers := api.Group("/suppliers")
+	{
+		suppliers.GET("", supplierHandler.GetSuppliers)
+		suppliers.GET("/:id", supplierHandler.GetSupplier)
+		suppliers.POST("", supplierHandler.CreateSupplier)
+		suppliers.PUT("/:id", supplierHandler.UpdateSupplier)
+		suppliers.DELETE("/:id", supplierHandler.DeleteSupplier)
+	}
+}
+
+// setupCompanyRoutes configures company-related routes
+func setupCompanyRoutes(api *gin.RouterGroup, companyHandler *handlers.CompanyHandler) {
+	companies := api.Group("/companies")
+	{
+		companies.GET("", companyHandler.GetCompanies)
+		companies.GET("/:id", companyHandler.GetCompany)
+		companies.POST("", companyHandler.CreateCompany)
+		companies.PUT("/:id", companyHandler.UpdateCompany)
+		companies.DELETE("/:id", companyHandler.DeleteCompany)
+	}
+}
+
+// setupShopRoutes configures shop-related routes
+func setupShopRoutes(api *gin.RouterGroup, shopHandler *handlers.ShopHandler) {
+	shops := api.Group("/shops")
+	{
+		shops.GET("", shopHandler.GetShops)
+		shops.GET("/:id", shopHandler.GetShop)
+		shops.POST("", shopHandler.CreateShop)
+		shops.PUT("/:id", shopHandler.UpdateShop)
+		shops.DELETE("/:id", shopHandler.DeleteShop)
+	}
+
+	// Nested route for getting shops by company
+	api.GET("/companies/:company_id/shops", shopHandler.GetShopsByCompany)
 }

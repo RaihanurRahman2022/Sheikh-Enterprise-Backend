@@ -1,14 +1,15 @@
-
 package persistence
 
 import (
 	"Sheikh-Enterprise-Backend/internal/domain/entities"
+
 	"gorm.io/gorm"
 )
 
 type ShopRepository interface {
 	BaseRepository[entities.Shop]
 	GetShopsWithFilters(filters map[string]interface{}, sorts []string, page, pageSize int) ([]entities.Shop, int64, error)
+	GetShopsByCompanyID(companyID string) ([]entities.Shop, error)
 }
 
 type shopRepository struct {
@@ -30,8 +31,8 @@ func (r *shopRepository) GetShopsWithFilters(filters map[string]interface{}, sor
 	// Apply filters
 	for field, value := range filters {
 		switch field {
-		case "name":
-			query = query.Where("name LIKE ?", "%"+value.(string)+"%")
+		case "name", "phone", "email", "manager_name", "manager_phone":
+			query = query.Where(field+" LIKE ?", "%"+value.(string)+"%")
 		case "company_id":
 			query = query.Where("company_id = ?", value)
 		}
@@ -56,4 +57,13 @@ func (r *shopRepository) GetShopsWithFilters(filters map[string]interface{}, sor
 	}
 
 	return shops, total, nil
+}
+
+func (r *shopRepository) GetShopsByCompanyID(companyID string) ([]entities.Shop, error) {
+	var shops []entities.Shop
+	err := r.DB.Where("company_id = ? AND is_marked_to_delete = ?", companyID, false).Find(&shops).Error
+	if err != nil {
+		return nil, err
+	}
+	return shops, nil
 }

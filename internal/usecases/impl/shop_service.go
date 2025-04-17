@@ -1,15 +1,16 @@
-
 package usecases
 
 import (
 	"Sheikh-Enterprise-Backend/internal/domain/entities"
 	repository "Sheikh-Enterprise-Backend/internal/infrastructure/persistence"
+
 	"github.com/google/uuid"
 )
 
 type ShopService interface {
 	GetShops(page, pageSize int, filters map[string]interface{}, sorts []string) ([]entities.Shop, int64, error)
 	GetShopByID(id uuid.UUID) (*entities.Shop, error)
+	GetShopsByCompanyID(companyID uuid.UUID) ([]entities.Shop, error)
 	CreateShop(shop *entities.Shop) error
 	UpdateShop(shop *entities.Shop) error
 	DeleteShop(id uuid.UUID) error
@@ -31,6 +32,10 @@ func (s *shopService) GetShops(page, pageSize int, filters map[string]interface{
 
 func (s *shopService) GetShopByID(id uuid.UUID) (*entities.Shop, error) {
 	return s.shopRepo.GetByID(id)
+}
+
+func (s *shopService) GetShopsByCompanyID(companyID uuid.UUID) ([]entities.Shop, error) {
+	return s.shopRepo.GetShopsByCompanyID(companyID.String())
 }
 
 func (s *shopService) CreateShop(shop *entities.Shop) error {

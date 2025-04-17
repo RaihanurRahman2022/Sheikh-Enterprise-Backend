@@ -5,7 +5,6 @@ import (
 
 	"Sheikh-Enterprise-Backend/internal/domain/entities"
 	repository "Sheikh-Enterprise-Backend/internal/infrastructure/persistence"
-	"Sheikh-Enterprise-Backend/pkg/utils"
 
 	"github.com/google/uuid"
 )
@@ -15,9 +14,8 @@ var (
 )
 
 type UserService interface {
-	GetUserDetails(id uuid.UUID) (*entities.User, error)
-	UpdateUserDetails(user *entities.User) error
-	UpdateUserPassword(id uuid.UUID, oldPassword, newPassword string) error
+	GetUserByID(id uuid.UUID) (*entities.User, error)
+	UpdateUser(user *entities.User) error
 }
 
 type userService struct {
@@ -30,32 +28,10 @@ func NewUserService(userRepo repository.UserRepository) UserService {
 	}
 }
 
-func (s *userService) GetUserDetails(id uuid.UUID) (*entities.User, error) {
-	user, err := s.userRepo.GetByID(id)
-	if err != nil {
-		return nil, ErrUserNotFound
-	}
-	return user, nil
+func (s *userService) GetUserByID(id uuid.UUID) (*entities.User, error) {
+	return s.userRepo.GetByID(id)
 }
 
-func (s *userService) UpdateUserDetails(user *entities.User) error {
+func (s *userService) UpdateUser(user *entities.User) error {
 	return s.userRepo.UpdateDetails(user)
-}
-
-func (s *userService) UpdateUserPassword(id uuid.UUID, oldPassword, newPassword string) error {
-	user, err := s.userRepo.GetByID(id)
-	if err != nil {
-		return ErrUserNotFound
-	}
-
-	if !utils.CheckPassword(oldPassword, user.Password) {
-		return ErrInvalidCredentials
-	}
-
-	hashedPassword, err := utils.HashPassword(newPassword)
-	if err != nil {
-		return err
-	}
-
-	return s.userRepo.UpdatePassword(id, hashedPassword)
 }

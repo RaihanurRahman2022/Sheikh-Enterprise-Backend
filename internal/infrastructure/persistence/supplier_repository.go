@@ -1,8 +1,8 @@
-
 package persistence
 
 import (
 	"Sheikh-Enterprise-Backend/internal/domain/entities"
+
 	"gorm.io/gorm"
 )
 

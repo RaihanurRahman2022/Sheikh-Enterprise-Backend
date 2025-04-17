@@ -4,14 +4,14 @@ import "github.com/google/uuid"
 
 type Shop struct {
 	Base
-	CompanyID    uuid.UUID   `gorm:"type:uuid;not null" json:"company_id"`
-	Name         string      `gorm:"type:varchar(255);not null" json:"name"`
-	Address      string      `gorm:"type:text" json:"address"`
-	Phone        string      `gorm:"type:varchar(20)" json:"phone"`
-	Email        string      `gorm:"type:varchar(255)" json:"email"`
-	ManagerName  string      `gorm:"type:varchar(255)" json:"manager_name"`
-	ManagerPhone string      `gorm:"type:varchar(20)" json:"manager_phone"`
-	Remarks      string      `gorm:"type:text" json:"remarks"`
-	Company      *Company    `gorm:"foreignKey:CompanyID" json:"company,omitempty"`
-	Inventories  []Inventory `gorm:"foreignKey:ShopID" json:"inventories,omitempty"`
+	ShopID       uuid.UUID `gorm:"type:uuid;primary_key" json:"shop_id"`
+	CompanyID    uuid.UUID `gorm:"type:uuid" json:"company_id"`
+	Name         string    `json:"name" binding:"required"`
+	Address      string    `json:"address" binding:"required"`
+	Phone        string    `json:"phone" binding:"required"`
+	Email        string    `json:"email" binding:"required,email"`
+	ManagerName  string    `json:"manager_name" binding:"required"`
+	ManagerPhone string    `json:"manager_phone" binding:"required"`
+	Remarks      string    `json:"remarks"`
+	Company      Company   `gorm:"foreignKey:CompanyID;references:ID" json:"company,omitempty"`
 }

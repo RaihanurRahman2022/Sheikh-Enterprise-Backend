@@ -1,5 +1,7 @@
 package entities
 
+import "time"
+
 // LoginRequest represents the login request body
 type LoginRequest struct {
 	Username string `json:"username" binding:"required,username"`
@@ -73,4 +75,67 @@ type SalePaymentRequest struct {
 	Amount      float64 `json:"amount" binding:"required,min=0"`
 	PaymentType string  `json:"payment_type" binding:"required,oneof=cash card mobile"`
 	Reference   string  `json:"reference" binding:"max=100"`
+}
+
+// UpdatePasswordRequest represents the request body for updating a user's password
+type UpdatePasswordRequest struct {
+	OldPassword string `json:"old_password" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,password"`
+}
+
+// CreateSupplierRequest represents the request body for creating a new supplier
+type CreateSupplierRequest struct {
+	Name    string `json:"name" binding:"required,min=3,max=100"`
+	Address string `json:"address" binding:"required"`
+	Phone   string `json:"phone" binding:"required,phone"`
+	Email   string `json:"email" binding:"required,email"`
+	Remarks string `json:"remarks" binding:"max=500"`
+}
+
+// CreateCompanyRequest represents the request body for creating a new company
+type CreateCompanyRequest struct {
+	Name    string `json:"name" binding:"required"`
+	Address string `json:"address" binding:"required"`
+	Phone   string `json:"phone" binding:"required"`
+	Email   string `json:"email" binding:"required,email"`
+	Slogan  string `json:"slogan"`
+	Remarks string `json:"remarks"`
+}
+
+// CreateShopRequest represents the request body for creating a new shop
+type CreateShopRequest struct {
+	CompanyID    string `json:"company_id" binding:"required,uuid"`
+	Name         string `json:"name" binding:"required"`
+	Address      string `json:"address" binding:"required"`
+	Phone        string `json:"phone" binding:"required"`
+	Email        string `json:"email" binding:"required,email"`
+	ManagerName  string `json:"manager_name" binding:"required"`
+	ManagerPhone string `json:"manager_phone" binding:"required"`
+	Remarks      string `json:"remarks"`
+}
+
+// Stock Transfer Requests
+type CreateStockTransferRequest struct {
+	FromShopID       string    `json:"from_shop_id" binding:"required,uuid"`
+	ToShopID         string    `json:"to_shop_id" binding:"required,uuid"`
+	ProductID        string    `json:"product_id" binding:"required,uuid"`
+	Quantity         int       `json:"quantity" binding:"required,min=1"`
+	TransferDateTime time.Time `json:"transfer_datetime" binding:"required"`
+	Remarks          string    `json:"remarks"`
+}
+
+type UpdateStockTransferRequest struct {
+	Status  string `json:"status" binding:"required,oneof=pending completed cancelled"`
+	Remarks string `json:"remarks"`
+}
+
+type StockTransferFilter struct {
+	FromShopID string    `form:"from_shop_id"`
+	ToShopID   string    `form:"to_shop_id"`
+	ProductID  string    `form:"product_id"`
+	Status     string    `form:"status"`
+	StartDate  time.Time `form:"start_date"`
+	EndDate    time.Time `form:"end_date"`
+	Page       int       `form:"page,default=1" binding:"min=1"`
+	PageSize   int       `form:"page_size,default=10" binding:"min=1,max=100"`
 }
