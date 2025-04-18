@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
+	"time" // Add this import for cors.MaxAge
 
 	"Sheikh-Enterprise-Backend/internal/config"
 	repository "Sheikh-Enterprise-Backend/internal/infrastructure/persistence"
@@ -146,11 +148,28 @@ func initializeHandlers(svcs *services.Services) *handlers.Handlers {
 func configureRouter(handlers *handlers.Handlers) *gin.Engine {
 	router := gin.Default()
 
+	// Set trusted proxies (none for development)
+	router.SetTrustedProxies(nil) // Or []string{"127.0.0.1"} for localhost
+
 	// Configure CORS
-	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{os.Getenv("ALLOWED_ORIGINS")}
-	corsConfig.AllowCredentials = true
-	corsConfig.AddAllowHeaders("Authorization")
+	allowedOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
+	if allowedOrigins == "" {
+		allowedOrigins = "http://localhost:3000"
+	}
+	origins := strings.Split(allowedOrigins, ",")
+	for i, origin := range origins {
+		origins[i] = strings.TrimSpace(origin)
+	}
+
+	corsConfig := cors.Config{
+		AllowOrigins:     origins,
+		AllowMethods:     strings.Split(os.Getenv("CORS_ALLOWED_METHODS"), ","),
+		AllowHeaders:     strings.Split(os.Getenv("CORS_ALLOWED_HEADERS"), ","),
+		ExposeHeaders:    strings.Split(os.Getenv("CORS_EXPOSE_HEADERS"), ","),
+		AllowCredentials: true,
+		MaxAge:           300 * time.Second,
+	}
+
 	router.Use(cors.New(corsConfig))
 
 	// Add global middleware

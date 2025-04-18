@@ -50,12 +50,12 @@ func (s *stockTransferService) GetStockTransfersByShopID(shopID uuid.UUID) ([]en
 
 func (s *stockTransferService) CreateStockTransfer(transfer *entities.StockTransfer) error {
 	// Check if source and destination shops are different
-	if transfer.FromShopID == transfer.ToShopID {
+	if transfer.FromShopID == nil || *transfer.FromShopID == transfer.ToShopID {
 		return ErrSameShopTransfer
 	}
 
 	// Check if source shop has sufficient stock
-	sourceInventory, err := s.inventoryRepo.GetByProductAndShop(transfer.ProductID, transfer.FromShopID)
+	sourceInventory, err := s.inventoryRepo.GetByProductAndShop(transfer.ProductID, *transfer.FromShopID)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func (s *stockTransferService) CreateStockTransfer(transfer *entities.StockTrans
 
 	// Update source shop inventory
 	sourceInventory.Quantity -= transfer.Quantity
-	if err := s.inventoryRepo.UpdateStock(transfer.ProductID, transfer.FromShopID, -transfer.Quantity); err != nil {
+	if err := s.inventoryRepo.UpdateStock(transfer.ProductID, *transfer.FromShopID, -transfer.Quantity); err != nil {
 		return err
 	}
 
@@ -93,7 +93,7 @@ func (s *stockTransferService) UpdateStockTransfer(transfer *entities.StockTrans
 	// If quantity changed, update inventories
 	if existing.Quantity != transfer.Quantity {
 		// Update source shop inventory
-		if err := s.inventoryRepo.UpdateStock(transfer.ProductID, transfer.FromShopID, existing.Quantity-transfer.Quantity); err != nil {
+		if err := s.inventoryRepo.UpdateStock(transfer.ProductID, *transfer.FromShopID, existing.Quantity-transfer.Quantity); err != nil {
 			return err
 		}
 
@@ -114,7 +114,7 @@ func (s *stockTransferService) DeleteStockTransfer(id uuid.UUID) error {
 	}
 
 	// Update source shop inventory
-	if err := s.inventoryRepo.UpdateStock(transfer.ProductID, transfer.FromShopID, transfer.Quantity); err != nil {
+	if err := s.inventoryRepo.UpdateStock(transfer.ProductID, *transfer.FromShopID, transfer.Quantity); err != nil {
 		return err
 	}
 

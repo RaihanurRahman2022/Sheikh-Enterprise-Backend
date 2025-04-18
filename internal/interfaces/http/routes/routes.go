@@ -16,6 +16,21 @@ func SetupRoutes(router *gin.Engine, handlers *handlers.Handlers) {
 		})
 	})
 
+	// Root route
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Welcome to Sheikh Enterprise Inventory Management System API",
+			"version": "1.0.0",
+			"endpoints": []string{
+				"/health",
+				"/auth/login",
+				"/api/shops",
+				"/api/companies",
+				"/api/products",
+			},
+		})
+	})
+
 	// Public routes (no auth required)
 	setupPublicRoutes(router, handlers.Auth)
 
@@ -128,8 +143,6 @@ func setupShopRoutes(api *gin.RouterGroup, shopHandler *handlers.ShopHandler) {
 		shops.POST("", shopHandler.CreateShop)
 		shops.PUT("/:id", shopHandler.UpdateShop)
 		shops.DELETE("/:id", shopHandler.DeleteShop)
+		shops.GET("/company/:company_id", shopHandler.GetShopsByCompany)
 	}
-
-	// Nested route for getting shops by company
-	api.GET("/companies/:company_id/shops", shopHandler.GetShopsByCompany)
 }

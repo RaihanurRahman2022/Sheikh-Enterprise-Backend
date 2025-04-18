@@ -48,7 +48,9 @@ func (s *analyticsService) GetStockTransferAnalytics(startDate, endDate time.Tim
 
 	for _, transfer := range transfers {
 		totalQuantity += transfer.Quantity
-		shopTransfers[transfer.FromShopID]++
+		if transfer.FromShopID != nil {
+			shopTransfers[*transfer.FromShopID]++
+		}
 		shopTransfers[transfer.ToShopID]++
 		productTransfers[transfer.ProductID]++
 	}

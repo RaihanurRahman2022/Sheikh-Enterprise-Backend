@@ -142,7 +142,7 @@ func (h *StockTransferHandler) CreateStockTransfer(c *gin.Context) {
 	transfer := &entities.StockTransfer{
 		ProductID:        productID,
 		ToShopID:         toShopID,
-		FromShopID:       fromShopID,
+		FromShopID:       &fromShopID,
 		Quantity:         request.Quantity,
 		TransferDateTime: request.TransferDateTime,
 		TransferredBy:    uuid.MustParse(c.GetString("user_id")), // Assuming user ID is stored in context

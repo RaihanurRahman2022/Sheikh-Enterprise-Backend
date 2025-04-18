@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"Sheikh-Enterprise-Backend/internal/domain/dto"
 	"Sheikh-Enterprise-Backend/internal/domain/entities"
 	validator "Sheikh-Enterprise-Backend/internal/infrastructure/validation"
 	services "Sheikh-Enterprise-Backend/internal/usecases/impl"
@@ -61,8 +62,14 @@ func (h *CompanyHandler) GetCompanies(c *gin.Context) {
 		return
 	}
 
+	// Convert to DTOs
+	companyDTOs := make([]dto.CompanyDTO, len(companies))
+	for i, company := range companies {
+		companyDTOs[i] = dto.ToCompanyDTO(&company)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"data": companies,
+		"data": companyDTOs,
 		"meta": gin.H{
 			"page":      page,
 			"page_size": pageSize,
@@ -93,7 +100,9 @@ func (h *CompanyHandler) GetCompany(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, company)
+	// Convert to DTO
+	companyDTO := dto.ToCompanyDTO(company)
+	c.JSON(http.StatusOK, companyDTO)
 }
 
 // CreateCompany godoc
@@ -132,7 +141,9 @@ func (h *CompanyHandler) CreateCompany(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, company)
+	// Convert to DTO
+	companyDTO := dto.ToCompanyDTO(company)
+	c.JSON(http.StatusCreated, companyDTO)
 }
 
 // UpdateCompany godoc
@@ -184,7 +195,9 @@ func (h *CompanyHandler) UpdateCompany(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, existingCompany)
+	// Convert to DTO
+	companyDTO := dto.ToCompanyDTO(existingCompany)
+	c.JSON(http.StatusOK, companyDTO)
 }
 
 // DeleteCompany godoc

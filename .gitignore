@@ -27,3 +27,4 @@ vendor/
 # OS specific files
 .DS_Store
 Thumbs.db 
+logs/app-local.log
