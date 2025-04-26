@@ -172,7 +172,7 @@ func configureRouter(handlers *handlers.Handlers) *gin.Engine {
 
 	router.Use(cors.New(corsConfig))
 
-	// Add global middleware
+	// Add global middleware before routes
 	router.Use(middleware.ValidationMiddleware())
 
 	// Setup routes

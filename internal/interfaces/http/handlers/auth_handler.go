@@ -1,12 +1,17 @@
 package handlers
 
 import (
-	"net/http"
-
 	"Sheikh-Enterprise-Backend/internal/domain/entities"
+	_val "Sheikh-Enterprise-Backend/internal/infrastructure/validation"
 	services "Sheikh-Enterprise-Backend/internal/usecases/impl"
+	"bytes"
+	"fmt"
+	"io"
+	"net/http"
+	"reflect"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 type AuthHandler struct {
@@ -65,11 +70,40 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Success 201 {object} map[string]string
 // @Router /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
-	var req entities.RegisterRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	reqType := reflect.TypeOf(entities.RegisterRequest{})
+	for i := 0; i < reqType.NumField(); i++ {
+		field := reqType.Field(i)
+		fmt.Printf("Field: %s, JSON Tag: %s\n", field.Name, field.Tag.Get("json"))
+	}
+	// Read request body
+	bodyBytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		fmt.Println("Error reading body:", err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read request body"})
 		return
 	}
+	// Log raw body
+	fmt.Println("Raw request body:", string(bodyBytes))
+
+	// Restore body for ShouldBindJSON
+	c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+	var req entities.RegisterRequest
+	fmt.Println("Attempting to bind JSON")
+	if err := c.ShouldBindJSON(&req); err != nil {
+		fmt.Println("Binding error:", err.Error())
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			formattedErrors := _val.FormatError(validationErrors)
+			fmt.Println("Validation errors:", formattedErrors)
+			c.JSON(http.StatusBadRequest, gin.H{"errors": formattedErrors})
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	// Debug bound struct
+	fmt.Printf("Bound struct: %+v\n", req)
 
 	if err := h.authService.Register(&req); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to register user"})
